@@ -1,0 +1,38 @@
+target: all
+
+common:
+  storage:
+    backend: filesystem
+    filesystem:
+      dir: /tmp/mimir/data
+
+server:
+  http_listen_port: 9009
+  grpc_listen_port: 9095
+
+blocks_storage:
+  backend: filesystem
+  filesystem:
+    dir: /tmp/mimir/blocks
+  tsdb:
+    dir: /tmp/mimir/tsdb
+    retention_period: 24h
+
+ingester:
+  ring:
+    kvstore:
+      store: inmemory
+    replication_factor: 1
+
+distributor:
+  ring:
+    kvstore:
+      store: inmemory
+
+ruler:
+  rule_path: /tmp/mimir/rules
+  alertmanager_url: http://localhost:9093
+  enable_api: true
+
+compactor:
+  data_dir: /tmp/mimir/compactor

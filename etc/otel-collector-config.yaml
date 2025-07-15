@@ -1,0 +1,43 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http: 
+
+exporters:
+  logging:
+    loglevel: debug
+  otlphttp/tempo:
+    endpoint: http://tempo:4318
+  prometheus:
+    endpoint: "0.0.0.0:9464"
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+
+connectors:
+  spanmetrics:
+    dimensions:
+      - name: http.method
+      - name: http.status_code
+      - name: http.route
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [spanmetrics, otlphttp/tempo, logging] # Usando o otlp/tempo renomeado
+    metrics: # Novo pipeline para métricas diretas do Quarkus
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus] # Envia para o exporter Prometheus do Collector
+    metrics/spanmetrics: # Pipeline para métricas geradas de traces
+      receivers: [spanmetrics]
+      exporters: [prometheus] # Também para o exporter Prometheus do Collector
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [loki]

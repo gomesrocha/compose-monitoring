@@ -1,0 +1,52 @@
+apiVersion: 1
+
+datasources:
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    uid: tempo-datasource
+    jsonData:
+      httpMethod: POST
+      tracesToLogs:
+        datasourceUid: 'loki-datasource' # Se você adicionar Loki depois
+        tags: ['job', 'instance', 'pod', 'namespace']
+        mappedKeys:
+          - 'level'
+        mapTagValues:
+          - tagName: 'level'
+            tagValue: 'error'
+            mappedValue: 'error'
+      tracesToMetrics:
+        datasourceUid: 'mimir-datasource' # Para correlacionar traces com métricas
+        tags: ['job', 'instance', 'pod', 'namespace']
+      serviceMap:
+        datasourceUid: 'prometheus-datasource' # Se você adicionar Prometheus depois
+
+  - name: Mimir
+    type: prometheus
+    access: proxy
+    url: http://mimir:9009
+    uid: mimir-datasource
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Mimir
+      prometheusVersion: 2.x
+      queryTimeout: 60s
+    version: 1
+    editable: true
+
+  - name: Parca
+    type: prometheus
+    access: proxy
+    url: http://parca:7070
+    uid: parca-datasource
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.x
+      queryTimeout: 60s
+    version: 1
+    editable: true

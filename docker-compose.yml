@@ -1,0 +1,75 @@
+services:
+  otel-collector:
+      image: otel/opentelemetry-collector-contrib:0.100.0
+      command:
+        - "--config=/conf/config.yaml"
+      volumes:
+        - ./etc/otel-collector-config.yaml:/conf/config.yaml
+      ports:
+        - "4317:4317"
+        - "4318:4318"
+        - "9464:9464" 
+        - "8889:8889"
+      restart: on-failure
+      depends_on:
+        - tempo
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./etc/grafana/:/etc/grafana/provisioning/datasources
+      - ./etc/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./etc/dashboards:/etc/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+  tempo:
+    image: grafana/tempo:2.4.1
+    command:
+      - -config.file=/etc/tempo.yaml
+    ports:
+      - "3200:3200"   # HTTP UI
+      - "14250:14250"
+      - "14318:4318" 
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+
+  mimir:
+    image: grafana/mimir
+    command: ["-config.file=/etc/mimir.yaml"]
+    ports:
+      - "9009:9009"
+    volumes:
+      - ./etc/mimir.yaml:/etc/mimir.yaml
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./etc/prometheus.yml:/workspace/prometheus.yml
+    command:
+      - --config.file=/workspace/prometheus.yml
+  loki:
+    image: bitnami/grafana-loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./etc/loki-config.yaml:/etc/loki/local-config.yaml # Mantenha o nome do arquivo, mas certifique-se que o caminho interno está correto
+      - ./loki-data:/loki 
+    command: -config.file=/etc/loki/local-config.yaml
+
+  k6:
+    image: grafana/k6
+    entrypoint: [""]
+    command: ["k6", "run", "/scripts/test.js"]
+    volumes:
+      - ./k6-scripts:/scripts
+
+volumes:
+  grafana-storage:
+  tempo-data:
+  mimir-data:
+  loki-data:
+

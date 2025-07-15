@@ -1,0 +1,9 @@
+# Ignorar dados persistentes de Loki e Mimir
+loki-data/
+mimir-data/
+
+# Outros exemplos úteis:
+*.log
+*.tmp
+.env
+__pycache__/

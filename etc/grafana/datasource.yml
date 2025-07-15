@@ -1,47 +1,72 @@
-# config file version
 apiVersion: 1
 
-# list of datasources that should be deleted from the database
-deleteDatasources:
-  - name: Loki
-    orgId: 1
-
-# list of datasources to insert/update depending
-# what's available in the database
 datasources:
-  # <string, required> name of the datasource. Required
-  - uid: prometheus
-    orgId: 1
-    name: Prometheus
-    type: prometheus
-    typeName: Prometheus
+  - name: Tempo
+    type: tempo
     access: proxy
-    url: http://prometheus:9090
-    password: ''
-    user: ''
-    database: ''
-    basicAuth: false
-    isDefault: true
+    url: http://tempo:3200
+    uid: tempo-datasource
     jsonData:
       httpMethod: POST
-    readOnly: false
-    editable: true
-  - uid: tempo
-    orgId: 1
-    name: Tempo
-    type: tempo
-    typeName: Tempo
+      tracesToLogs:
+        datasourceUid: 'loki-datasource' # Se você adicionar Loki depois
+        tags: ['job', 'instance', 'pod', 'namespace']
+        mappedKeys:
+          - 'level'
+        mapTagValues:
+          - tagName: 'level'
+            tagValue: 'error'
+            mappedValue: 'error'
+      tracesToMetrics:
+        datasourceUid: 'mimir-datasource' # Para correlacionar traces com métricas
+        tags: ['job', 'instance', 'pod', 'namespace']
+      serviceMap:
+        datasourceUid: 'prometheus-datasource' # Se você adicionar Prometheus depois
+
+  - name: Mimir
+    type: prometheus
     access: proxy
-    url: http://tempo
-    password: ''
-    user: ''
-    database: ''
-    basicAuth: false
-    isDefault: false
+    url: http://mimir:9009
+    uid: mimir-datasource
     jsonData:
-      nodeGraph:
-        enabled: true
-      search:
-        hide: false
-    readOnly: false
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Mimir
+      prometheusVersion: 2.x
+      queryTimeout: 60s
+    version: 1
+    editable: true
+
+  - name: Parca
+    type: prometheus
+    access: proxy
+    url: http://parca:7070
+    uid: parca-datasource
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.x
+      queryTimeout: 60s
+    version: 1
+    editable: true
+  
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    uid: loki-datasource
+    jsonData:
+      httpHeaderName1: ""
+    editable: true
+
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    uid: prometheus-datasource
+    jsonData:
+      httpMethod: POST
+      queryTimeout: 60s
+    version: 1
     editable: true

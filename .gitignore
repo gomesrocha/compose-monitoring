@@ -1,7 +1,7 @@
 # Ignorar dados persistentes de Loki e Mimir
 loki-data/
 mimir-data/
-
+grafana-provisioning/
 # Outros exemplos úteis:
 *.log
 *.tmp
